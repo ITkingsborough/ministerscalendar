@@ -17,10 +17,9 @@
             margin: 0 auto 30px auto;
             text-align: center;
             padding: 40px 30px;
-            background: white;
+            background: linear-gradient(to right, #3498db, #2980b9);
             border-radius: 15px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            background: linear-gradient(to right, #3498db, #2980b9);
         }
         .header h1 {
             color: white;
@@ -69,55 +68,24 @@
             font-size: 14px;
             letter-spacing: 1px;
         }
-        th:first-child {
-            border-top-left-radius: 10px;
-        }
-        th:last-child {
-            border-top-right-radius: 10px;
-        }
-        tr:last-child td:first-child {
-            border-bottom-left-radius: 10px;
-        }
-        tr:last-child td:last-child {
-            border-bottom-right-radius: 10px;
-        }
-        .download-btn {
-            background-color: #2ecc71;
-            color: white;
-            padding: 8px 16px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            text-decoration: none;
-            font-size: 14px;
-            transition: all 0.3s ease;
-            display: inline-block;
-        }
-        .download-btn:hover {
-            background-color: #27ae60;
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(46, 204, 113, 0.2);
-        }
-        tr:hover {
-            background-color: #f8f9fa;
-        }
-        @media (max-width: 600px) {
-            body {
-                padding: 20px;
-            }
-            .container, .header {
-                padding: 15px;
-            }
-            .header h1 {
-                font-size: 24px;
-            }
-            th, td {
-                padding: 10px;
-            }
+        .ps-note {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 15px;
+            background: #fff3cd;
+            border: 1px solid #ffeeba;
+            color: #856404;
+            border-radius: 8px;
+            font-size: 16px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
         }
     </style>
 </head>
 <body>
+      <div class="ps-note">
+        <strong>PS:</strong> All ministers are required to put on a clergy collar.
+    </div>
     <div class="header">
         <h1>Kingsborough Church Officiating Calendar</h1>
     </div>
@@ -189,7 +157,7 @@
             tableBody.appendChild(row);
         });
     </script>
-<div class="ps-note">
+    <div class="ps-note">
         <strong>PS:</strong> All ministers are required to put on a clergy collar.
     </div>
 </body>
