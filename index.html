@@ -12,17 +12,26 @@
             background: linear-gradient(135deg, #f5f7fa 0%, #e4e8eb 100%);
             min-height: 100vh;
         }
-        .ps-note {
-            font-weight: bold;
-            text-align: center;
-            padding: 10px;
-            background-color: #ffeb3b;
-            color: #333;
-            border-radius: 5px;
-            margin: 0 auto 20px auto;
-            max-width: 800px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-        }
+    .ps-note {
+        font-weight: bold;
+        text-align: center;
+        padding: 10px;
+        background-color: #ffeb3b;
+        color: #333;
+        border-radius: 5px;
+        position: fixed;
+        top: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 100%;
+        max-width: 800px;
+        z-index: 1000;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    }
+    
+    body {
+        padding-top: 60px; /* Prevents content from being hidden behind the fixed note */
+    }
         .header {
             max-width: 800px;
             margin: 0 auto 30px auto;
