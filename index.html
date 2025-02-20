@@ -4,11 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kingsborough Church Calendar</title>
-    
-    <!-- Import iCal.js for parsing ICS files -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/ical.js/1.4.0/ical.min.js"></script>
-
     <style>
+        /* Previous styles remain the same */
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
@@ -32,10 +29,9 @@
             margin: 0 auto 30px auto;
             text-align: center;
             padding: 40px 30px;
-            background: white;
+            background: linear-gradient(to right, #3498db, #2980b9);
             border-radius: 15px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            background: linear-gradient(to right, #3498db, #2980b9);
         }
         .header h1 {
             color: white;
@@ -46,13 +42,6 @@
             font-weight: 600;
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
         }
-        .duty-headline {
-            text-align: center;
-            font-size: 20px;
-            font-weight: bold;
-            color: #d63031;
-            margin-bottom: 20px;
-        }
         .container {
             max-width: 800px;
             margin: 20px auto;
@@ -60,37 +49,62 @@
             padding: 30px;
             border-radius: 15px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
         }
-        h2 {
+        .weekly-schedule {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #3498db;
+        }
+        .weekly-schedule h3 {
             color: #2c3e50;
-            margin-bottom: 25px;
-            padding-bottom: 15px;
-            border-bottom: 2px solid #eee;
-            font-size: 24px;
+            margin: 0 0 10px 0;
         }
+        .weekly-schedule p {
+            margin: 5px 0;
+            color: #34495e;
+        }
+        /* Rest of the previous styles */
     </style>
 </head>
 <body>
     <div class="ps-note">
         <strong>PS:</strong> All ministers are required to put on a clergy collar on their officiating days.
     </div>
-    
     <div class="header">
         <h1>Kingsborough Church Officiating Calendar</h1>
     </div>
-    
-    <div class="duty-headline">
-        <h2 id="on-duty">Loading...</h2>
+    <div class="container">
+        <h2>This Week's Officiating Schedule</h2>
+        <div id="weekly-schedules"></div>
+    </div>
+    <div class="container">
+        <h2>Calendar for Lead Ministers</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Download Calendar</th>
+                </tr>
+            </thead>
+            <tbody id="minister-list"></tbody>
+        </table>
     </div>
 
     <script>
-        const ministerSchedules = [
+        const Pastor = [
             { name: "Pastor Bodinga Sambo", file: "attached_assets/PBO.ics" },
             { name: "Pastor Christine", file: "attached_assets/PC.ics" },
             { name: "Pastor Emmanuel", file: "attached_assets/PE.ics" },
             { name: "Pastor Gbenga Jola", file: "attached_assets/PGJO.ics" },
             { name: "Pastor Segun Oyinloye", file: "attached_assets/PSO.ics" },
-            { name: "Elder Moji Hassan", file: "attached_assets/EMH.ics" },
+            { name: "Pastor Segun Oyinloye", file: "attached_assets/PSO.ics" },
+            { name: "Elder Moji Hassan", file: "attached_assets/EMH.ics" }
+        ];
+
+        const Minister = [
             { name: "Minister Eniola Shabi", file: "attached_assets/MES.ics" },
             { name: "Minister Joshua Shoyebo", file: "attached_assets/MJA.ics" },
             { name: "Minister Joash Balogun", file: "attached_assets/MJB.ics" },
@@ -101,56 +115,133 @@
             { name: "Minister Yomi Okanlawon", file: "attached_assets/MYO.ics" }
         ];
 
-        function getWeekNumber(date) {
-            const startOfYear = new Date(date.getFullYear(), 0, 1);
-            const pastDays = Math.floor((date - startOfYear) / (24 * 60 * 60 * 1000));
-            return Math.ceil((pastDays + startOfYear.getDay() + 1) / 7);
-        }
-
-        async function fetchAndParseICS(url, ministerName) {
+        // Function to parse ICS file
+        async function parseICSFile(file) {
             try {
-                const response = await fetch(url);
-                const icsText = await response.text();
-                const jcalData = ICAL.parse(icsText);
-                const comp = new ICAL.Component(jcalData);
-                const events = comp.getAllSubcomponents("vevent");
+                const response = await fetch(file);
+                const text = await response.text();
+                
+                // Simple ICS parser
+                const events = [];
+                const lines = text.split('\n');
+                let currentEvent = null;
 
-                return events.map(event => {
-                    const startDate = new ICAL.Time.fromString(event.getFirstPropertyValue("dtstart"));
-                    return { name: ministerName, date: new Date(startDate.toJSDate()) };
-                });
+                for (const line of lines) {
+                    if (line.startsWith('BEGIN:VEVENT')) {
+                        currentEvent = {};
+                    } else if (line.startsWith('END:VEVENT')) {
+                        if (currentEvent) events.push(currentEvent);
+                        currentEvent = null;
+                    } else if (currentEvent) {
+                        if (line.startsWith('DTSTART:')) {
+                            currentEvent.start = new Date(line.substring(8));
+                        } else if (line.startsWith('SUMMARY:')) {
+                            currentEvent.summary = line.substring(8);
+                        }
+                    }
+                }
+                return events;
             } catch (error) {
-                console.error(`Error loading ICS for ${ministerName}:`, error);
+                console.error('Error parsing ICS file:', error);
                 return [];
             }
         }
 
-        async function updateDutyPersons() {
-            const currentWeek = getWeekNumber(new Date());
-            let dutyMinisters = [];
+        // Function to check if a date is in the current week
+        function isCurrentWeek(date) {
+            const now = new Date();
+            const weekStart = new Date(now.setDate(now.getDate() - now.getDay()));
+            const weekEnd = new Date(now.setDate(now.getDate() + 6));
+            return date >= weekStart && date <= weekEnd;
+        }
 
-            for (const minister of ministerSchedules) {
-                const events = await fetchAndParseICS(minister.file, minister.name);
+        // Function to display weekly schedule
+        async function displayWeeklySchedule() {
+            const weeklySchedulesDiv = document.getElementById('weekly-schedules');
+            const allEvents = [];
+
+            // Fetch and parse all ICS files
+            for (const pastor of Pastor) {
+                const events = await parseICSFile(pastor.file);
                 events.forEach(event => {
-                    if (getWeekNumber(event.date) === currentWeek) {
-                        dutyMinisters.push({ name: event.name, file: minister.file });
+                    if (isCurrentWeek(event.start)) {
+                        allEvents.push({
+                            name: pastor.name,
+                            date: event.start,
+                            summary: event.summary
+                        });
                     }
                 });
             }
 
-            const onDutyElement = document.getElementById("on-duty");
-            if (dutyMinisters.length > 0) {
-                onDutyElement.innerHTML = `
-                    This week's officiating ministers:<br>
-                    ${dutyMinisters.map(m => `<strong>${m.name}</strong> <a href="${m.file}" class="download-btn" download>Download</a>`).join("<br>")}
-                `;
-            } else {
-                onDutyElement.innerHTML = "No ministers assigned this week.";
+            for (const minister of Minister) {
+                const events = await parseICSFile(minister.file);
+                events.forEach(event => {
+                    if (isCurrentWeek(event.start)) {
+                        allEvents.push({
+                            name: minister.name,
+                            date: event.start,
+                            summary: event.summary
+                        });
+                    }
+                });
             }
+
+            // Sort events by date
+            allEvents.sort((a, b) => a.date - b.date);
+
+            // Display events
+            allEvents.forEach(event => {
+                const eventDiv = document.createElement('div');
+                eventDiv.className = 'weekly-schedule';
+                eventDiv.innerHTML = `
+                    <h3>${event.date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</h3>
+                    <p><strong>Officiating:</strong> ${event.name}</p>
+                    <p>${event.summary}</p>
+                `;
+                weeklySchedulesDiv.appendChild(eventDiv);
+            });
         }
 
-        updateDutyPersons();
+        // Initialize the table and weekly schedule
+        const ministerTableBody = document.createElement("tbody");
+        Minister.forEach(Minister => {
+            let row = document.createElement("tr");
+            row.innerHTML = `
+                <td>${Minister.name}</td>
+                <td><a href="${Minister.file}" class="download-btn" download>Download</a></td>
+            `;
+            ministerTableBody.appendChild(row);
+        });
+
+        const ministerSection = document.createElement("div");
+        ministerSection.classList.add("container");
+        ministerSection.innerHTML = `
+            <h2>Calendar for Ministers</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Download Calendar</th>
+                    </tr>
+                </thead>
+            </table>
+        `;
+        ministerSection.querySelector("table").appendChild(ministerTableBody);
+        document.body.appendChild(ministerSection);
+
+        const tableBody = document.getElementById("minister-list");
+        Pastor.forEach(Pastor => {
+            let row = document.createElement("tr");
+            row.innerHTML = `
+                <td>${Pastor.name}</td>
+                <td><a href="${Pastor.file}" class="download-btn" download>Download</a></td>
+            `;
+            tableBody.appendChild(row);
+        });
+
+        // Display the weekly schedule when the page loads
+        displayWeeklySchedule();
     </script>
 </body>
 </html>
-
